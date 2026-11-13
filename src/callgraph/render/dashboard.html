@@ -278,6 +278,7 @@ $("theme").onclick = () => {
   try { localStorage.setItem("callgraph-theme", root.dataset.theme); } catch (e) {}
 };
 try { const t = localStorage.getItem("callgraph-theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+{ const q = new URLSearchParams(location.search).get("theme"); if (q === "light" || q === "dark") document.documentElement.dataset.theme = q; }
 
 // ---------- modules / colors ----------
 const PALETTE = ["#6cb6ff", "#f0b45a", "#7ee787", "#ff9bce", "#d2a8ff", "#ffa198", "#56d4dd", "#e3b341", "#a5d6ff", "#f778ba", "#9ecbff", "#b4f0a8"];
