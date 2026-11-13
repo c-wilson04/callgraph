@@ -80,20 +80,17 @@ def test_cli_ascii_output():
     assert "c" in output
 
 
-def test_filter_excludes_stdlib():
-    script = ROOT / "examples" / "stdlib_demo.py"
+def test_filter_excludes_stdlib(tmp_path):
+    script = tmp_path / "stdlib_demo.py"
     script.write_text(
         "import json\n\ndef main():\n    json.dumps({'a': 1})\n\nmain()\n",
         encoding="utf-8",
     )
-    try:
-        recorder = run_script(script, trace_filter=TraceFilter.for_script(script))
-        tree = build_call_tree(recorder)
-        names = _collect_names(tree.root)
-        assert "loads" not in names
-        assert "dumps" not in names or "main" in names
-    finally:
-        script.unlink(missing_ok=True)
+    recorder = run_script(script, trace_filter=TraceFilter.for_script(script))
+    tree = build_call_tree(recorder)
+    names = _collect_names(tree.root)
+    assert "main" in names
+    assert "dumps" not in names
 
 
 def _collect_names(node) -> list[str]:

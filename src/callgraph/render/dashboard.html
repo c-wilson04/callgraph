@@ -1,0 +1,756 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__TITLE__</title>
+<style>
+:root {
+  --bg: #0d1117; --panel: #151b23; --panel-2: #1c2430; --line: #2a3441; --line-soft: #222b36;
+  --text: #e6edf3; --muted: #8b98a8; --faint: #5d6b7c; --accent: #6cb6ff; --accent-2: #f0b45a;
+  --hot: #ff7b72; --good: #56d364; --shadow: 0 1px 0 rgba(255,255,255,.03), 0 8px 24px rgba(0,0,0,.35);
+  --code-bg: #0b0f14; --kw: #ff7b72; --str: #a5d6ff; --com: #6e7f91; --num: #79c0ff; --fn: #d2a8ff;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #f6f8fa; --panel: #ffffff; --panel-2: #f3f5f8; --line: #d8dee4; --line-soft: #e6eaef;
+    --text: #1f2328; --muted: #59636e; --faint: #8c959f; --accent: #0969da; --accent-2: #bf8700;
+    --hot: #cf222e; --good: #1a7f37; --shadow: 0 1px 2px rgba(31,35,40,.06), 0 6px 18px rgba(31,35,40,.06);
+    --code-bg: #f6f8fa; --kw: #cf222e; --str: #0a3069; --com: #6e7781; --num: #0550ae; --fn: #8250df;
+    color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --bg: #f6f8fa; --panel: #ffffff; --panel-2: #f3f5f8; --line: #d8dee4; --line-soft: #e6eaef;
+  --text: #1f2328; --muted: #59636e; --faint: #8c959f; --accent: #0969da; --accent-2: #bf8700;
+  --hot: #cf222e; --good: #1a7f37; --shadow: 0 1px 2px rgba(31,35,40,.06), 0 6px 18px rgba(31,35,40,.06);
+  --code-bg: #f6f8fa; --kw: #cf222e; --str: #0a3069; --com: #6e7781; --num: #0550ae; --fn: #8250df;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--text); }
+body { font: 14px/1.45 ui-sans-serif, -apple-system, "Segoe UI", Inter, Roboto, sans-serif; }
+code, pre, .mono { font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace; }
+.wrap { max-width: 1480px; margin: 0 auto; padding: 20px 16px 64px; }
+header.top { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 650; font-size: 18px; letter-spacing: -.01em; }
+.brand svg { width: 26px; height: 26px; }
+.meta { color: var(--muted); font-size: 13px; display: flex; gap: 14px; flex-wrap: wrap; }
+.meta b { color: var(--text); font-weight: 600; }
+.spacer { flex: 1; }
+button, select, input {
+  font: inherit; color: var(--text); background: var(--panel-2); border: 1px solid var(--line);
+  border-radius: 8px; padding: 6px 11px;
+}
+button { cursor: pointer; }
+button:hover { border-color: var(--accent); }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+:root[data-theme="light"] button.primary { color: #fff; }
+input[type=search] { min-width: 200px; }
+.kpis { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+.kpi { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; box-shadow: var(--shadow); min-width: 0; }
+.kpi .k { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+.kpi .v { font-size: 26px; font-weight: 680; letter-spacing: -.02em; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+.kpi .s { color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kpi.highlight .v { color: var(--accent-2); font-size: 19px; padding-top: 6px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); margin-bottom: 16px; overflow: hidden; }
+.card-h { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--line-soft); flex-wrap: wrap; }
+.card-h h2 { margin: 0; font-size: 15px; font-weight: 650; }
+.card-h .hint { color: var(--muted); font-size: 12.5px; }
+.graph-layout > *, .two > *, .kpis > * { min-width: 0; }
+.card { min-width: 0; }
+.graph-layout { display: grid; grid-template-columns: minmax(0, 1fr) 380px; min-height: 780px; }
+#graph { position: relative; height: 780px; overflow: hidden; cursor: grab; background:
+  radial-gradient(circle at 1px 1px, var(--line-soft) 1px, transparent 0) 0 0 / 22px 22px; }
+#graph.dragging { cursor: grabbing; }
+#graph svg { width: 100%; height: 100%; display: block; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--muted); }
+.legend #legend span, .legend > span:not(.heatkey) { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.legend span.off { opacity: .35; }
+.node rect.body { fill: var(--panel-2); stroke: var(--heat, var(--line)); stroke-width: 2; }
+.node rect.tint { fill: var(--heat); opacity: .14; pointer-events: none; }
+.node text.count { fill: var(--text); font-size: 19px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.node text.count tspan { fill: var(--muted); font-size: 11px; font-weight: 500; }
+.heatkey { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); margin-right: 18px; font-variant-numeric: tabular-nums; }
+.heatkey .ramp { width: 140px; height: 10px; border-radius: 5px; }
+.node:hover rect.body { stroke: var(--accent); }
+.node.sel rect.body { stroke: var(--accent); stroke-width: 2.4; }
+.node.dim { opacity: .18; }
+.node.match rect.body { stroke: var(--accent-2); stroke-width: 2.4; }
+.node text.t { fill: var(--text); font-size: 13px; font-weight: 600; }
+.node text.sub { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.node .heat-bg { fill: var(--line-soft); }
+.node .pulse { fill: none; stroke: var(--accent-2); stroke-width: 3; opacity: 0; }
+.node.flash .pulse { animation: pulse .55s ease-out; }
+@keyframes pulse { 0% { opacity: 1; } 100% { opacity: 0; } }
+.node .badge rect { fill: var(--accent-2); }
+.node .badge text { fill: #111; font-size: 11px; font-weight: 700; }
+.edge path { fill: none; stroke: var(--faint); stroke-opacity: .55; }
+.edge.dim { opacity: .08; }
+.edge.hl path { stroke: var(--accent); stroke-opacity: .95; }
+.edge.flash path { stroke: var(--accent-2); stroke-opacity: 1; }
+.edge text { fill: var(--muted); font-size: 10.5px; font-variant-numeric: tabular-nums; paint-order: stroke; stroke: var(--bg); stroke-width: 3px; }
+.side { border-left: 1px solid var(--line-soft); overflow: auto; max-height: 780px; padding: 16px; }
+.side h3 { margin: 0 0 2px; font-size: 17px; word-break: break-word; }
+.side .where { color: var(--muted); font-size: 12px; margin-bottom: 12px; word-break: break-all; }
+.statgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+.stat { background: var(--panel-2); border: 1px solid var(--line-soft); border-radius: 9px; padding: 7px 9px; }
+.stat .k { font-size: 11px; color: var(--muted); }
+.stat .v { font-weight: 650; font-variant-numeric: tabular-nums; }
+.side h4 { margin: 14px 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.rel { display: flex; flex-direction: column; gap: 4px; }
+.rel a { display: flex; justify-content: space-between; gap: 8px; padding: 5px 8px; border-radius: 7px; background: var(--panel-2); color: var(--text); text-decoration: none; font-size: 13px; }
+.rel a:hover { outline: 1px solid var(--accent); }
+.rel a span:last-child { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+pre.code { background: var(--code-bg); border: 1px solid var(--line-soft); border-radius: 9px; padding: 10px 12px; font-size: 12px; overflow: auto; max-height: 340px; margin: 0; line-height: 1.5; }
+pre.code .ln { color: var(--faint); user-select: none; display: inline-block; width: 2.6em; }
+.tok-kw { color: var(--kw); } .tok-str { color: var(--str); } .tok-com { color: var(--com); font-style: italic; } .tok-num { color: var(--num); } .tok-fn { color: var(--fn); }
+.empty { color: var(--muted); padding: 30px 6px; text-align: center; }
+#hist svg { width: 100%; height: 70px; display: block; }
+#hist rect { fill: var(--accent); opacity: .8; }
+#hist text { fill: var(--muted); font-size: 10px; }
+#flame { position: relative; overflow: auto; max-height: 520px; padding: 8px 12px 12px; }
+#flame svg { display: block; }
+#flame .cell rect { stroke: var(--bg); stroke-width: 1; }
+#flame .cell text { fill: #0d1117; font-size: 11.5px; font-weight: 600; pointer-events: none; }
+#flame .cell:hover rect { filter: brightness(1.15); }
+#flame .cell.faded { opacity: .35; }
+.crumbs { font-size: 12.5px; color: var(--muted); }
+.crumbs a { color: var(--accent); cursor: pointer; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.bars { padding: 10px 16px 16px; }
+.bar-row { display: grid; grid-template-columns: minmax(120px, 34%) 1fr 92px; align-items: center; gap: 10px; padding: 4px 0; cursor: pointer; }
+.bar-row:hover .bar-label { color: var(--accent); }
+.bar-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13px; }
+.bar-track { height: 18px; border-radius: 5px; background: var(--panel-2); overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 5px; transition: width .5s cubic-bezier(.2,.8,.2,1); }
+.bar-val { text-align: right; font-variant-numeric: tabular-nums; font-size: 12.5px; color: var(--muted); }
+.paths { padding: 8px 16px 16px; display: flex; flex-direction: column; gap: 8px; }
+.path { display: grid; grid-template-columns: 28px 1fr; gap: 10px; padding: 9px 10px; background: var(--panel-2); border-radius: 10px; border: 1px solid var(--line-soft); cursor: pointer; }
+.path:hover { border-color: var(--accent); }
+.path .rank { color: var(--muted); font-weight: 650; text-align: right; }
+.chain { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; font-size: 12.5px; }
+.chip { padding: 2px 7px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); white-space: nowrap; }
+.chip i { display: inline-block; width: 7px; height: 7px; border-radius: 2px; margin-right: 5px; vertical-align: 1px; }
+.arrow { color: var(--faint); }
+.path .pm { font-size: 12px; color: var(--muted); margin-top: 4px; font-variant-numeric: tabular-nums; }
+.path .pm b { color: var(--accent-2); }
+table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+th, td { padding: 7px 12px; border-bottom: 1px solid var(--line-soft); text-align: right; white-space: nowrap; }
+th:first-child, td:first-child, th:nth-child(2), td:nth-child(2) { text-align: left; }
+th { color: var(--muted); font-weight: 600; cursor: pointer; user-select: none; position: sticky; top: 0; background: var(--panel); }
+th.sorted { color: var(--accent); }
+tbody tr { cursor: pointer; }
+tbody tr:hover { background: var(--panel-2); }
+.table-wrap { max-height: 480px; overflow: auto; }
+.tooltip { position: fixed; pointer-events: none; z-index: 20; background: var(--panel); border: 1px solid var(--line); border-radius: 9px; padding: 8px 10px; font-size: 12.5px; box-shadow: var(--shadow); max-width: 360px; display: none; }
+.tooltip b { display: block; margin-bottom: 2px; }
+.tooltip .tm { color: var(--muted); font-variant-numeric: tabular-nums; }
+footer { color: var(--faint); font-size: 12px; text-align: center; margin-top: 26px; }
+@media (max-width: 1100px) {
+  .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .graph-layout { grid-template-columns: 1fr; }
+  .side { border-left: 0; border-top: 1px solid var(--line-soft); max-height: none; }
+  .two { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #graph { height: 460px; }
+  input[type=search] { min-width: 0; width: 100%; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <rect x="2" y="2" width="28" height="28" rx="8" fill="var(--accent)" opacity=".16"/>
+        <circle cx="9" cy="16" r="3.2" fill="var(--accent)"/><circle cx="22" cy="9" r="3.2" fill="var(--accent-2)"/>
+        <circle cx="22" cy="23" r="3.2" fill="var(--accent)"/>
+        <path d="M12 15 19 10M12 17l7 5" stroke="var(--text)" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+      callgraph
+    </div>
+    <div class="meta" id="meta"></div>
+    <div class="spacer"></div>
+    <button id="theme" title="Toggle light / dark">◐ Theme</button>
+  </header>
+
+  <section class="kpis" id="kpis"></section>
+
+  <section class="card">
+    <div class="card-h">
+      <h2>Runtime call graph</h2>
+      <span class="hint">Number + colour = calls (green few → red most). Click a node for timing and source.</span>
+      <div class="spacer"></div>
+      <input type="search" id="search" placeholder="Find function…">
+      <button id="showall">Show all</button>
+      <button id="fit">Fit</button>
+      <button class="primary" id="replay">▶ Replay execution</button>
+    </div>
+    <div class="card-h" style="padding-top:8px;padding-bottom:8px"><div class="legend"><span class="heatkey" id="heatkey"></span><span id="legend" style="display:contents"></span></div></div>
+    <div class="graph-layout">
+      <div id="graph"></div>
+      <aside class="side" id="side"></aside>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-h">
+      <h2>Execution pipeline</h2>
+      <span class="hint">Every distinct call path, in the order it first ran (left → right). Width = time. Click to zoom.</span>
+      <div class="spacer"></div>
+      <span class="crumbs" id="crumbs"></span>
+    </div>
+    <div id="flame"></div>
+  </section>
+
+  <div class="two">
+    <section class="card">
+      <div class="card-h">
+        <h2>Function rankings</h2>
+        <div class="spacer"></div>
+        <select id="metric">
+          <option value="calls">Most called</option>
+          <option value="total_ns">Total time (inclusive)</option>
+          <option value="self_ns">Self time</option>
+          <option value="mean_ns">Mean duration</option>
+          <option value="median_ns">Median duration</option>
+          <option value="p95_ns">p95 duration</option>
+        </select>
+      </div>
+      <div class="bars" id="bars"></div>
+    </section>
+    <section class="card">
+      <div class="card-h">
+        <h2>Hottest call paths</h2>
+        <div class="spacer"></div>
+        <select id="pathsort">
+          <option value="calls">By frequency</option>
+          <option value="total_ns">By time</option>
+        </select>
+      </div>
+      <div class="paths" id="paths"></div>
+    </section>
+  </div>
+
+  <section class="card">
+    <div class="card-h">
+      <h2>All functions</h2>
+      <span class="hint" id="tablehint"></span>
+      <div class="spacer"></div>
+      <input type="search" id="tsearch" placeholder="Filter…">
+    </div>
+    <div class="table-wrap"><table id="table"></table></div>
+  </section>
+
+  <footer>Generated by callgraph · dynamic runtime call graph for Python</footer>
+</div>
+<div class="tooltip" id="tip"></div>
+
+<script>
+const DATA = /*__CALLGRAPH_DATA__*/null;
+(function () {
+"use strict";
+const S = DATA.summary, F = DATA.functions, E = DATA.edges;
+const keys = Object.keys(F);
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const NS = "http://www.w3.org/2000/svg";
+const svgEl = (tag, attrs = {}, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+function fmtNs(ns) {
+  if (ns >= 1e9) return (ns / 1e9).toFixed(2) + " s";
+  if (ns >= 1e6) return (ns / 1e6).toFixed(ns >= 1e8 ? 0 : 2) + " ms";
+  if (ns >= 1e3) return (ns / 1e3).toFixed(1) + " µs";
+  return Math.round(ns) + " ns";
+}
+const fmtN = (n) => n.toLocaleString("en-US");
+const metricFmt = (m, v) => (m === "calls" ? fmtN(v) : fmtNs(v));
+
+// ---------- theme ----------
+$("theme").onclick = () => {
+  const root = document.documentElement;
+  const isDark = root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  root.dataset.theme = isDark ? "light" : "dark";
+  try { localStorage.setItem("callgraph-theme", root.dataset.theme); } catch (e) {}
+};
+try { const t = localStorage.getItem("callgraph-theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+
+// ---------- modules / colors ----------
+const PALETTE = ["#6cb6ff", "#f0b45a", "#7ee787", "#ff9bce", "#d2a8ff", "#ffa198", "#56d4dd", "#e3b341", "#a5d6ff", "#f778ba", "#9ecbff", "#b4f0a8"];
+const modules = [...new Set(keys.map((k) => F[k].module || "(script)"))].sort();
+const modColor = {}; modules.forEach((m, i) => (modColor[m] = PALETTE[i % PALETTE.length]));
+const colorOf = (k) => modColor[F[k].module || "(script)"];
+const hiddenModules = new Set();
+
+// ---------- header + KPIs ----------
+const fs = keys.map((k) => F[k]);
+const mostCalled = fs.slice().sort((a, b) => b.calls - a.calls)[0];
+const mostSelf = fs.slice().sort((a, b) => b.self_ns - a.self_ns)[0];
+// "Slowest per call" only considers functions doing their own work (not just waiting on callees).
+const slowest = fs.filter((f) => f.name !== "<module>" && f.calls > 1 && f.total_ns > 0 && f.self_ns / f.total_ns >= 0.5).sort((a, b) => b.median_ns - a.median_ns)[0];
+$("meta").innerHTML = [
+  S.script ? `<span>script <b class="mono">${esc(S.script)}</b></span>` : "",
+  `<span>backend <b>${esc(S.backend || "?")}</b></span>`,
+  `<span>Python <b>${esc(S.python)}</b></span>`,
+  S.overhead_ns_per_call ? `<span title="Measured at startup and subtracted from all timings">overhead-corrected (−${fmtNs(S.overhead_ns_per_call)}/call)</span>` : "",
+  S.generated ? `<span>${esc(S.generated)}</span>` : "",
+].join("");
+const kpi = (k, v, s, cls = "") => `<div class="kpi ${cls}"><div class="k">${k}</div><div class="v" title="${esc(v)}">${v}</div><div class="s" title="${esc(s)}">${s}</div></div>`;
+$("kpis").innerHTML =
+  kpi("Function calls", fmtN(S.total_calls), `${fmtN(S.events)} trace events`) +
+  kpi("Functions hit", fmtN(S.unique_functions), `${S.edges} call edges · ${modules.length} modules`) +
+  kpi("Traced time", fmtNs(S.traced_ns), `max call depth ${S.max_depth}`) +
+  kpi("Most called", mostCalled ? esc(mostCalled.label) : "–", mostCalled ? `${fmtN(mostCalled.calls)} calls · median ${fmtNs(mostCalled.median_ns)}` : "", "highlight") +
+  kpi("Most time (self)", mostSelf ? esc(mostSelf.label) : "–", mostSelf ? `${fmtNs(mostSelf.self_ns)} · ${(100 * mostSelf.self_ns / Math.max(1, S.traced_ns)).toFixed(1)}% of run` : "", "highlight") +
+  kpi("Slowest per call", slowest ? esc(slowest.label) : "–", slowest ? `median ${fmtNs(slowest.median_ns)} · p95 ${fmtNs(slowest.p95_ns)}` : "", "highlight");
+
+// ---------- call-count heat (log scale: green = few calls, red = most calls) ----------
+const maxCallsAll = Math.max(1, ...fs.map((f) => f.calls));
+const HEAT = [[63, 185, 80], [210, 153, 34], [240, 136, 62], [248, 81, 73]];
+const heatT = (calls) => (maxCallsAll <= 1 ? 1 : Math.log(Math.max(1, calls)) / Math.log(maxCallsAll));
+function heatColor(calls) {
+  const t = Math.min(1, Math.max(0, heatT(calls))) * (HEAT.length - 1);
+  const i = Math.min(HEAT.length - 2, Math.floor(t)), u = t - i;
+  const c = HEAT[i].map((v, j) => Math.round(v + (HEAT[i + 1][j] - v) * u));
+  return `rgb(${c[0]},${c[1]},${c[2]})`;
+}
+$("heatkey").innerHTML = `Calls <b style="color:var(--text)">1</b><i class="ramp" style="background:linear-gradient(90deg,${HEAT.map((c) => `rgb(${c})`).join(",")})"></i><b style="color:var(--text)">${fmtN(maxCallsAll)}</b>`;
+
+// ---------- legend ----------
+function renderLegend() {
+  const shown = modules.filter((m) => fs.some((f) => (f.module || "(script)") === m && (f.name !== "<module>" || m === "__main__")));
+  $("legend").innerHTML = shown.map((m) => `<span data-m="${esc(m)}" class="${hiddenModules.has(m) ? "off" : ""}"><i style="background:${modColor[m]};border-radius:50%"></i>${esc(m)}</span>`).join("");
+  $("legend").querySelectorAll("span").forEach((s) => (s.onclick = () => {
+    const m = s.dataset.m; hiddenModules.has(m) ? hiddenModules.delete(m) : hiddenModules.add(m);
+    renderLegend(); applyHighlight();
+  }));
+}
+renderLegend();
+
+// ---------- tooltip ----------
+const tip = $("tip");
+function showTip(ev, html) { tip.innerHTML = html; tip.style.display = "block"; moveTip(ev); }
+function moveTip(ev) {
+  const pad = 14, w = tip.offsetWidth, h = tip.offsetHeight;
+  let x = ev.clientX + pad, y = ev.clientY + pad;
+  if (x + w > innerWidth - 8) x = ev.clientX - w - pad;
+  if (y + h > innerHeight - 8) y = ev.clientY - h - pad;
+  tip.style.left = x + "px"; tip.style.top = y + "px";
+}
+const hideTip = () => (tip.style.display = "none");
+const fnTip = (k) => { const f = F[k]; return `<b>${esc(f.label)}</b><div class="tm">${fmtN(f.calls)} calls · median ${fmtNs(f.median_ns)} · total ${fmtNs(f.total_ns)}</div>`; };
+
+// ---------- graph data ----------
+const out = {}, inc = {};
+keys.forEach((k) => { out[k] = []; inc[k] = []; });
+E.forEach((e, i) => { e.id = i; if (out[e.source] && inc[e.target]) { out[e.source].push(e); inc[e.target].push(e); } });
+const maxTotal = Math.max(1, ...fs.map((f) => f.total_ns));
+
+// Focused view: functions that matter (time or call volume), plus the callers that
+// connect them to the entry point. Import-time <module> code of other modules is hidden.
+function focusKeys() {
+  const keep = new Set();
+  const cand = fs.filter((f) => !(f.name === "<module>" && f.module !== "__main__"));
+  const thr = Math.max(1, S.traced_ns) * 0.01;
+  cand.slice().sort((a, b) => b.self_ns - a.self_ns).slice(0, 8).forEach((f) => { if (f.self_ns >= thr / 4) keep.add(f.key); });
+  cand.slice().sort((a, b) => b.total_ns - a.total_ns).slice(0, 10).forEach((f) => { if (f.total_ns >= thr) keep.add(f.key); });
+  cand.slice().sort((a, b) => b.calls - a.calls).slice(0, 6).forEach((f) => keep.add(f.key));
+  // connect: follow the heaviest caller edge upward until we hit a kept node / entry
+  [...keep].forEach((k) => {
+    let cur = k, guard = 0;
+    while (guard++ < 64) {
+      const callers = inc[cur].filter((e) => e.source !== cur);
+      if (!callers.length) break;
+      const best = callers.reduce((a, b) => (b.total_ns > a.total_ns ? b : a));
+      if (keep.has(best.source)) break;
+      keep.add(best.source); cur = best.source;
+    }
+  });
+  return keys.filter((k) => keep.has(k));
+}
+const focusList = focusKeys();
+let showAll = focusList.length >= keys.length;
+let GK = [], GE = [], gOut = {}, gInc = {}, xy = {}, back = new Set(), layerCount = 1, maxRows = 1;
+const NW = 196, NH = 64, GX = 224, GY = 112; // GX: column pitch, GY: layer pitch (top → bottom)
+
+// ---------- graph render ----------
+const gHost = $("graph");
+const svg = svgEl("svg", { "aria-label": "Call graph" }, gHost);
+const defs = svgEl("defs", {}, svg);
+const mk = svgEl("marker", { id: "arrow", viewBox: "0 0 10 10", refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: "auto-start-reverse" }, defs);
+svgEl("path", { d: "M0,0 L10,5 L0,10 z", fill: "var(--faint)" }, mk);
+const mkH = svgEl("marker", { id: "arrowh", viewBox: "0 0 10 10", refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: "auto-start-reverse" }, defs);
+svgEl("path", { d: "M0,0 L10,5 L0,10 z", fill: "var(--accent)" }, mkH);
+const viewport = svgEl("g", {}, svg);
+const edgeLayer = svgEl("g", {}, viewport), nodeLayer = svgEl("g", {}, viewport);
+let edgeEls = {}, nodeEls = {};
+const trunc = (s, n) => (s.length > n ? s.slice(0, n - 1) + "…" : s);
+
+function layout() {
+  const set = new Set(GK);
+  GE = E.filter((e) => set.has(e.source) && set.has(e.target));
+  gOut = {}; gInc = {};
+  GK.forEach((k) => { gOut[k] = []; gInc[k] = []; });
+  GE.forEach((e) => { gOut[e.source].push(e); gInc[e.target].push(e); });
+  back = new Set();
+  const visited = {}, dfsOrder = [];
+  let roots = GK.filter((k) => gInc[k].every((e) => e.source === k));
+  if (!roots.length && GK.length) roots = [GK[0]];
+  const dfs = (start) => {
+    if (visited[start]) return;
+    const stack = [[start, 0]]; visited[start] = 1; dfsOrder.push(start);
+    while (stack.length) {
+      const top = stack[stack.length - 1], n = top[0], outs = gOut[n];
+      if (top[1] < outs.length) {
+        const e = outs[top[1]++], m = e.target;
+        if (visited[m] === 1) back.add(e.id);
+        else if (!visited[m]) { visited[m] = 1; dfsOrder.push(m); stack.push([m, 0]); }
+      } else { visited[n] = 2; stack.pop(); }
+    }
+  };
+  roots.forEach(dfs); GK.forEach(dfs);
+  const layer = {}, indeg = {};
+  dfsOrder.forEach((k) => { layer[k] = 0; indeg[k] = 0; });
+  GE.forEach((e) => { if (!back.has(e.id) && e.source !== e.target) indeg[e.target]++; });
+  const queue = dfsOrder.filter((k) => indeg[k] === 0);
+  while (queue.length) {
+    const n = queue.shift();
+    gOut[n].forEach((e) => {
+      if (back.has(e.id) || e.source === e.target) return;
+      layer[e.target] = Math.max(layer[e.target], layer[n] + 1);
+      if (--indeg[e.target] === 0) queue.push(e.target);
+    });
+  }
+  const layers = [];
+  dfsOrder.forEach((k) => { (layers[layer[k]] = layers[layer[k]] || []).push(k); });
+  const pos = {};
+  layers.forEach((L) => L.forEach((k, i) => (pos[k] = i)));
+  for (let it = 0; it < 16; it++) {
+    const down = it % 2 === 0;
+    const seq = down ? layers.slice(1) : layers.slice(0, -1).reverse();
+    seq.forEach((L) => {
+      const bc = {};
+      L.forEach((k) => {
+        const nb = (down ? gInc[k].map((e) => e.source) : gOut[k].map((e) => e.target)).filter((m) => m !== k && layer[m] !== layer[k]);
+        bc[k] = nb.length ? nb.reduce((a, m) => a + pos[m], 0) / nb.length : pos[k];
+      });
+      L.sort((a, b) => bc[a] - bc[b] || pos[a] - pos[b]);
+      L.forEach((k, i) => (pos[k] = i));
+    });
+  }
+  layerCount = Math.max(1, layers.length);
+  maxRows = Math.max(1, ...layers.map((L) => L.length));
+  xy = {};
+  layers.forEach((L, li) => {
+    const offset = ((maxRows - L.length) * GX) / 2;
+    L.forEach((k, i) => (xy[k] = { x: offset + i * GX, y: li * GY }));
+  });
+}
+
+function drawGraph() {
+  GK = showAll ? keys.slice() : focusList.slice();
+  layout();
+  edgeLayer.innerHTML = ""; nodeLayer.innerHTML = "";
+  edgeEls = {}; nodeEls = {};
+  const maxEdge = Math.max(1, ...GE.map((e) => e.calls));
+  GE.forEach((e) => {
+    const a = xy[e.source], b = xy[e.target]; if (!a || !b) return;
+    const g = svgEl("g", { class: "edge" }, edgeLayer);
+    const w = 1.2 + 6 * Math.sqrt(e.calls / maxEdge);
+    let d, lx, ly;
+    if (e.source === e.target) {
+      const x = a.x + NW, y = a.y + 12;
+      d = `M${x},${y} C${x + 46},${y - 18} ${x + 46},${y + 40} ${x},${y + 26}`;
+      lx = x + 40; ly = y + 11;
+    } else if (back.has(e.id) || b.y <= a.y) {
+      const x1 = a.x + NW, y1 = a.y + NH / 2, x2 = b.x + NW, y2 = b.y + NH / 2;
+      const bulge = Math.max(x1, x2) + 50 + Math.abs(y1 - y2) * 0.15;
+      d = `M${x1},${y1} C${bulge},${y1} ${bulge},${y2} ${x2 + 2},${y2}`;
+      lx = bulge - 10; ly = (y1 + y2) / 2;
+    } else {
+      const x1 = a.x + NW / 2, y1 = a.y + NH, x2 = b.x + NW / 2, y2 = b.y, my = (y1 + y2) / 2;
+      d = `M${x1},${y1} C${x1},${my} ${x2},${my} ${x2},${y2 - 2}`;
+      lx = (x1 + x2) / 2 + 6; ly = my + 4;
+    }
+    const p = svgEl("path", { d, "stroke-width": w.toFixed(2), "marker-end": "url(#arrow)" }, g);
+    const t = svgEl("text", { x: lx, y: ly, "text-anchor": "start" }, g);
+    t.textContent = "×" + fmtN(e.calls);
+    edgeEls[e.id] = { g, p, e };
+  });
+  GK.forEach((k) => {
+    const f = F[k], { x, y } = xy[k];
+    const g = svgEl("g", { class: "node", transform: `translate(${x},${y})`, tabindex: 0 }, nodeLayer);
+    svgEl("rect", { class: "pulse", x: -4, y: -4, width: NW + 8, height: NH + 8, rx: 13 }, g);
+    const heat = heatColor(f.calls);
+    g.style.setProperty("--heat", heat);
+    svgEl("rect", { class: "body", width: NW, height: NH, rx: 10 }, g);
+    svgEl("rect", { class: "tint", width: NW, height: NH, rx: 10 }, g);
+    // module = small dot; call count = the headline, coloured border/tint = call heat
+    svgEl("circle", { cx: 15, cy: 16, r: 4.5, fill: colorOf(k) }, g);
+    const t = svgEl("text", { class: "t", x: 25, y: 20 }, g); t.textContent = trunc(f.label, 22);
+    const c = svgEl("text", { class: "count", x: 12, y: 44 }, g);
+    c.textContent = fmtN(f.calls);
+    const unit = svgEl("tspan", { dx: 5 }, c); unit.textContent = f.calls === 1 ? "call" : "calls";
+    const s = svgEl("text", { class: "sub", x: NW - 12, y: 44, "text-anchor": "end" }, g); s.textContent = `med ${fmtNs(f.median_ns)}`;
+    // bottom bar = call volume (log scale, same as the colour)
+    svgEl("rect", { class: "heat-bg", x: 12, y: NH - 11, width: NW - 24, height: 4, rx: 2 }, g);
+    svgEl("rect", { x: 12, y: NH - 11, width: Math.max(3, (NW - 24) * heatT(f.calls)), height: 4, rx: 2, fill: heat }, g);
+    const badge = svgEl("g", { class: "badge", transform: `translate(${NW - 8},-8)`, style: "display:none" }, g);
+    svgEl("rect", { x: -34, y: 0, width: 42, height: 18, rx: 9 }, badge);
+    const bt = svgEl("text", { x: -13, y: 13, "text-anchor": "middle" }, badge);
+    g.addEventListener("click", (ev) => { ev.stopPropagation(); select(k); });
+    g.addEventListener("keydown", (ev) => { if (ev.key === "Enter") select(k); });
+    g.addEventListener("mouseenter", (ev) => showTip(ev, fnTip(k)));
+    g.addEventListener("mousemove", moveTip);
+    g.addEventListener("mouseleave", hideTip);
+    nodeEls[k] = { g, badge, bt };
+  });
+  $("showall").textContent = showAll ? `Focus view` : `Show all ${keys.length}`;
+  $("showall").title = showAll ? "Show only the functions that matter" : `Showing ${GK.length} of ${keys.length} functions`;
+  $("showall").style.display = focusList.length >= keys.length ? "none" : "";
+}
+
+// pan / zoom
+let view = { x: 0, y: 0, k: 1 };
+const applyView = () => viewport.setAttribute("transform", `translate(${view.x},${view.y}) scale(${view.k})`);
+function fit() {
+  const W = gHost.clientWidth, H = gHost.clientHeight;
+  const gw = Math.max(1, maxRows * GX - (GX - NW) + 60), gh = Math.max(1, layerCount * GY - (GY - NH));
+  const k = Math.min(1.2, Math.max(0.12, Math.min((W - 40) / gw, (H - 40) / gh)));
+  view = { k, x: (W - gw * k) / 2, y: Math.max(20, (H - gh * k) / 2) };
+  applyView();
+}
+gHost.addEventListener("wheel", (ev) => {
+  ev.preventDefault();
+  const r = gHost.getBoundingClientRect(), mx = ev.clientX - r.left, my = ev.clientY - r.top;
+  const nk = Math.min(4, Math.max(0.08, view.k * Math.exp(-ev.deltaY * 0.0015)));
+  view.x = mx - ((mx - view.x) * nk) / view.k; view.y = my - ((my - view.y) * nk) / view.k; view.k = nk;
+  applyView();
+}, { passive: false });
+let drag = null;
+gHost.addEventListener("pointerdown", (ev) => { if (ev.target.closest(".node")) return; drag = { x: ev.clientX, y: ev.clientY, vx: view.x, vy: view.y, moved: false }; gHost.classList.add("dragging"); });
+addEventListener("pointermove", (ev) => { if (!drag) return; const dx = ev.clientX - drag.x, dy = ev.clientY - drag.y; if (Math.abs(dx) + Math.abs(dy) > 3) drag.moved = true; view.x = drag.vx + dx; view.y = drag.vy + dy; applyView(); });
+addEventListener("pointerup", () => { if (drag && !drag.moved) select(null); drag = null; gHost.classList.remove("dragging"); });
+$("fit").onclick = fit;
+$("showall").onclick = () => { if (replayTimer) stopReplay(); showAll = !showAll; drawGraph(); applyHighlight(); fit(); };
+drawGraph();
+
+// ---------- selection / highlight ----------
+let selected = null, query = "";
+function applyHighlight() {
+  const nb = new Set();
+  if (selected) { nb.add(selected); out[selected].forEach((e) => nb.add(e.target)); inc[selected].forEach((e) => nb.add(e.source)); }
+  GK.forEach((k) => {
+    const el = nodeEls[k].g, hidden = hiddenModules.has(F[k].module || "(script)");
+    el.classList.toggle("sel", k === selected);
+    el.classList.toggle("dim", hidden || (selected !== null && !nb.has(k)));
+    el.classList.toggle("match", !!query && F[k].label.toLowerCase().includes(query));
+  });
+  Object.values(edgeEls).forEach(({ g, p, e }) => {
+    const on = selected && (e.source === selected || e.target === selected);
+    const hidden = hiddenModules.has(F[e.source].module || "(script)") || hiddenModules.has(F[e.target].module || "(script)");
+    g.classList.toggle("hl", !!on); g.classList.toggle("dim", hidden || (selected !== null && !on));
+    p.setAttribute("marker-end", on ? "url(#arrowh)" : "url(#arrow)");
+  });
+}
+$("search").addEventListener("input", (ev) => {
+  query = ev.target.value.trim().toLowerCase(); applyHighlight();
+  const hit = query && GK.find((k) => F[k].label.toLowerCase().includes(query));
+  if (hit) centerOn(hit);
+});
+function centerOn(k) {
+  if (!xy[k]) { showAll = true; drawGraph(); applyHighlight(); }
+  const W = gHost.clientWidth, H = gHost.clientHeight, p = xy[k];
+  view.x = W / 2 - (p.x + NW / 2) * view.k; view.y = H / 2 - (p.y + NH / 2) * view.k; applyView();
+}
+
+// ---------- side panel ----------
+function hl(code) {
+  const KW = /^(False|None|True|and|as|assert|async|await|break|class|continue|def|del|elif|else|except|finally|for|from|global|if|import|in|is|lambda|nonlocal|not|or|pass|raise|return|try|while|with|yield|self|cls)$/;
+  const re = /(#[^\n]*)|("""[\s\S]*?"""|'''[\s\S]*?'''|[rbfuRBFU]{0,2}"(?:\\.|[^"\\\n])*"|[rbfuRBFU]{0,2}'(?:\\.|[^'\\\n])*')|(\b\d[\d_]*(?:\.\d+)?\b)|([A-Za-z_]\w*)/g;
+  let outS = "", last = 0, m, prevDef = false;
+  while ((m = re.exec(code))) {
+    outS += esc(code.slice(last, m.index)); last = re.lastIndex;
+    if (m[1]) outS += `<span class="tok-com">${esc(m[1])}</span>`;
+    else if (m[2]) outS += `<span class="tok-str">${esc(m[2])}</span>`;
+    else if (m[3]) outS += `<span class="tok-num">${esc(m[3])}</span>`;
+    else if (KW.test(m[4])) { outS += `<span class="tok-kw">${m[4]}</span>`; prevDef = m[4] === "def" || m[4] === "class"; continue; }
+    else if (prevDef) outS += `<span class="tok-fn">${m[4]}</span>`;
+    else outS += esc(m[4]);
+    prevDef = false;
+  }
+  outS += esc(code.slice(last));
+  return outS;
+}
+function withLineNumbers(html, start) {
+  return html.split("\n").map((l, i) => `<span class="ln">${start + i}</span>${l}`).join("\n");
+}
+function histogram(f) {
+  const smp = f.samples || [];
+  if (smp.length < 2 || f.max_ns === f.min_ns) return "";
+  const lo = Math.log10(Math.max(1, f.min_ns)), hi = Math.log10(Math.max(2, f.max_ns)), B = 24;
+  const bins = new Array(B).fill(0);
+  smp.forEach((v) => { const i = Math.min(B - 1, Math.floor(((Math.log10(Math.max(1, v)) - lo) / Math.max(1e-9, hi - lo)) * B)); bins[i]++; });
+  const mx = Math.max(...bins), w = 100 / B;
+  const rects = bins.map((c, i) => `<rect x="${i * w + 0.3}%" y="${54 - (c / mx) * 50}" width="${w - 0.6}%" height="${(c / mx) * 50}" rx="1.5"></rect>`).join("");
+  return `<h4>Duration distribution (${fmtN(smp.length)} samples, log scale)</h4><div id="hist"><svg>${rects}<text x="0" y="68">${fmtNs(f.min_ns)}</text><text x="100%" y="68" text-anchor="end">${fmtNs(f.max_ns)}</text></svg></div>`;
+}
+function relList(list, field) {
+  if (!list.length) return `<div class="hint" style="color:var(--muted);font-size:12.5px">none</div>`;
+  return `<div class="rel">${list.slice().sort((a, b) => b.calls - a.calls).map((e) => `<a href="#" data-k="${esc(e[field])}"><span>${esc(F[e[field]].label)}</span><span>×${fmtN(e.calls)} · ${fmtNs(e.total_ns)}</span></a>`).join("")}</div>`;
+}
+function renderSide() {
+  const side = $("side");
+  if (!selected) {
+    side.innerHTML = `<div class="empty"><div style="font-size:28px;margin-bottom:6px">⌖</div>Select a function in the graph, a bar, a path or a table row<br>to see its metrics, callers, callees and source.</div>`;
+    return;
+  }
+  const f = F[selected];
+  const st = (k, v) => `<div class="stat"><div class="k">${k}</div><div class="v">${v}</div></div>`;
+  side.innerHTML = `
+    <h3>${esc(f.label)}</h3>
+    <div class="where mono"><i style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${colorOf(selected)};margin-right:6px"></i>${esc(f.module || "(script)")} · ${esc(f.filename)}:${f.lineno}</div>
+    <div class="statgrid">
+      ${st("Calls", fmtN(f.calls))}${st("Mean", fmtNs(f.mean_ns))}${st("Median", fmtNs(f.median_ns))}
+      ${st("p95", fmtNs(f.p95_ns))}${st("Min", fmtNs(f.min_ns))}${st("Max", fmtNs(f.max_ns))}
+      ${st("Total", fmtNs(f.total_ns))}${st("Self", fmtNs(f.self_ns))}${st("Raised", fmtN(f.raised))}
+    </div>
+    ${histogram(f)}
+    <h4>Called by</h4>${relList(inc[selected].filter((e) => e.source !== selected || true), "source")}
+    <h4>Calls</h4>${relList(out[selected], "target")}
+    <h4>Source</h4>${f.source ? `<pre class="code">${withLineNumbers(hl(f.source), f.name === "<module>" ? 1 : f.lineno)}</pre>` : `<div class="hint" style="color:var(--muted)">source unavailable</div>`}`;
+  side.querySelectorAll("a[data-k]").forEach((a) => (a.onclick = (ev) => { ev.preventDefault(); select(a.dataset.k, true); }));
+}
+function select(k, center) {
+  selected = k; applyHighlight(); renderSide();
+  if (k && center) centerOn(k);
+  document.querySelectorAll("#table tbody tr").forEach((tr) => (tr.style.background = tr.dataset.k === k ? "var(--panel-2)" : ""));
+}
+function focusFn(k) { select(k, true); $("graph").scrollIntoView({ behavior: "smooth", block: "center" }); }
+
+// ---------- replay (walk the calling-context tree in execution order) ----------
+let replayTimer = null;
+$("replay").onclick = () => {
+  if (replayTimer) { stopReplay(); return; }
+  const steps = [];
+  // Walk the calling-context tree in execution order; for hidden functions, keep the
+  // nearest visible ancestor as the edge source.
+  (function walk(list, parent) { list.forEach((n) => { const vis = !!nodeEls[n.key]; if (vis) steps.push({ k: n.key, from: parent, calls: n.calls }); walk(n.children, vis ? n.key : parent); }); })(DATA.cct, null);
+  const counts = {}; GK.forEach((k) => { counts[k] = 0; nodeEls[k].badge.style.display = "none"; });
+  select(null);
+  GK.forEach((k) => nodeEls[k].g.classList.add("dim"));
+  Object.values(edgeEls).forEach(({ g }) => g.classList.add("dim"));
+  const edgeIdx = {}; E.forEach((e) => (edgeIdx[e.source + "→" + e.target] = e.id));
+  const totalMs = Math.min(14000, Math.max(5000, steps.length * 40));
+  const per = Math.max(1, Math.ceil(steps.length / (totalMs / 45)));
+  let i = 0;
+  $("replay").textContent = "■ Stop replay";
+  replayTimer = setInterval(() => {
+    for (let j = 0; j < per && i < steps.length; j++, i++) {
+      const s = steps[i], ne = nodeEls[s.k];
+      if (!ne) continue;
+      counts[s.k] += s.calls;
+      ne.g.classList.remove("dim"); ne.g.classList.remove("flash"); void ne.g.getBBox(); ne.g.classList.add("flash");
+      ne.badge.style.display = ""; ne.bt.textContent = counts[s.k] >= 1e4 ? Math.round(counts[s.k] / 1e3) + "k" : fmtN(counts[s.k]);
+      if (s.from) {
+        const id = edgeIdx[s.from + "→" + s.k];
+        if (id !== undefined) { const ee = edgeEls[id]; ee.g.classList.remove("dim"); ee.g.classList.add("flash"); setTimeout(() => ee.g.classList.remove("flash"), 500); }
+      }
+    }
+    if (i >= steps.length) { stopReplay(true); }
+  }, 45);
+};
+function stopReplay(finished) {
+  clearInterval(replayTimer); replayTimer = null;
+  $("replay").textContent = "▶ Replay execution";
+  setTimeout(() => { GK.forEach((k) => nodeEls[k] && (nodeEls[k].badge.style.display = "none")); applyHighlight(); }, finished ? 1800 : 0);
+}
+
+// ---------- flame / pipeline ----------
+const flameHost = $("flame");
+const cctRoot = { key: null, label: "all", total_ns: DATA.cct.reduce((a, n) => a + n.total_ns, 0), calls: 0, children: DATA.cct };
+let flameFocus = cctRoot, flamePath = [cctRoot];
+(function link(n, parent) { n.parent = parent; n.children.forEach((c) => link(c, n)); })(cctRoot, null);
+function renderFlame() {
+  flameHost.innerHTML = "";
+  const W = Math.max(320, flameHost.clientWidth - 24), RH = 24;
+  let depthMax = 0;
+  const cells = [];
+  (function lay(n, x, w, d) {
+    if (w < 0.6) return;
+    if (n !== flameFocus || n.key) { cells.push({ n, x, w, d }); depthMax = Math.max(depthMax, d); }
+    let cx = x;
+    const tot = Math.max(1, n.total_ns);
+    n.children.forEach((c) => { const cw = (w * c.total_ns) / tot; lay(c, cx, cw, d + 1); cx += cw; });
+  })(flameFocus, 0, W, flameFocus.key ? 0 : -1);
+  const s = svgEl("svg", { width: W, height: (depthMax + 1) * RH + 2 }, flameHost);
+  cells.forEach(({ n, x, w, d }) => {
+    const g = svgEl("g", { class: "cell", transform: `translate(${x},${d * RH})`, style: "cursor:pointer" }, s);
+    svgEl("rect", { width: Math.max(0.5, w), height: RH - 1, rx: 3, fill: colorOf(n.key) }, g);
+    if (w > 46) { const t = svgEl("text", { x: 6, y: 16 }, g); t.textContent = trunc(F[n.key].label, Math.floor(w / 7.2)); }
+    g.addEventListener("click", () => { flameFocus = n === flameFocus ? (n.parent || cctRoot) : n; renderFlame(); select(n.key); });
+    g.addEventListener("mouseenter", (ev) => showTip(ev, `<b>${esc(F[n.key].label)}</b><div class="tm">${fmtN(n.calls)} calls on this path · ${fmtNs(n.total_ns)} total · ${fmtNs(n.self_ns)} self<br>${(100 * n.total_ns / Math.max(1, cctRoot.total_ns)).toFixed(1)}% of traced time</div>`));
+    g.addEventListener("mousemove", moveTip);
+    g.addEventListener("mouseleave", hideTip);
+  });
+  const chain = []; for (let n = flameFocus; n; n = n.parent) chain.unshift(n);
+  $("crumbs").innerHTML = chain.map((n, i) => i === chain.length - 1 ? esc(n.key ? F[n.key].label : "all") : `<a data-i="${i}">${esc(n.key ? F[n.key].label : "all")}</a>`).join(" › ");
+  $("crumbs").querySelectorAll("a").forEach((a) => (a.onclick = () => { flameFocus = chain[+a.dataset.i]; renderFlame(); }));
+}
+
+// ---------- rankings ----------
+function renderBars() {
+  const m = $("metric").value;
+  const top = fs.slice().sort((a, b) => b[m] - a[m]).slice(0, 14);
+  const mx = Math.max(1, top[0] ? top[0][m] : 1);
+  $("bars").innerHTML = top.map((f) => `<div class="bar-row" data-k="${esc(f.key)}"><div class="bar-label" title="${esc(f.label)}">${esc(f.label)}</div><div class="bar-track"><div class="bar-fill" style="width:0;background:${m === "calls" ? heatColor(f.calls) : colorOf(f.key)}" data-w="${(100 * f[m]) / mx}"></div></div><div class="bar-val">${metricFmt(m, f[m])}</div></div>`).join("");
+  requestAnimationFrame(() => $("bars").querySelectorAll(".bar-fill").forEach((b) => (b.style.width = Math.max(0.6, +b.dataset.w) + "%")));
+  $("bars").querySelectorAll(".bar-row").forEach((r) => {
+    r.onclick = () => focusFn(r.dataset.k);
+    r.onmouseenter = (ev) => showTip(ev, fnTip(r.dataset.k)); r.onmousemove = moveTip; r.onmouseleave = hideTip;
+  });
+}
+$("metric").onchange = renderBars;
+
+// ---------- hot paths ----------
+function renderPaths() {
+  const by = $("pathsort").value;
+  const list = DATA.hot_paths.slice().sort((a, b) => b[by] - a[by]).slice(0, 10);
+  // Hide the frames every listed path shares (entry point, main loop, dispatcher...).
+  let common = 0;
+  if (list.length > 1) {
+    const minLen = Math.min(...list.map((p) => p.path.length)) - 1;
+    while (common < minLen && list.every((p) => p.path[common] === list[0].path[common])) common++;
+  }
+  const prefixNote = common ? `<div class="pm" style="padding:0 2px 2px">All paths start with ${list[0].path.slice(0, common).map((k) => `<span class="chip"><i style="background:${colorOf(k)}"></i>${esc(F[k].label)}</span>`).join('<span class="arrow"> → </span>')}</div>` : "";
+  $("paths").innerHTML = prefixNote + list.map((p, i) => `<div class="path" data-k="${esc(p.path[p.path.length - 1])}"><div class="rank">${i + 1}</div><div><div class="chain">${common ? '<span class="arrow">…</span>' : ""}${p.path.slice(common).map((k) => `<span class="chip"><i style="background:${colorOf(k)}"></i>${esc(F[k].label)}</span>`).join('<span class="arrow">→</span>')}</div><div class="pm"><b>×${fmtN(p.calls)}</b> times · ${fmtNs(p.total_ns)} total · ${p.path.length} frames deep</div></div></div>`).join("") || `<div class="empty">No paths recorded.</div>`;
+  $("paths").querySelectorAll(".path").forEach((el) => (el.onclick = () => focusFn(el.dataset.k)));
+}
+$("pathsort").onchange = renderPaths;
+
+// ---------- table ----------
+const COLS = [["label", "Function"], ["module", "Module"], ["calls", "Calls"], ["total_ns", "Total"], ["self_ns", "Self"], ["mean_ns", "Mean"], ["median_ns", "Median"], ["p95_ns", "p95"], ["max_ns", "Max"]];
+let sortCol = "calls", sortDir = -1, tfilter = "";
+function renderTable() {
+  const rows = fs.filter((f) => !tfilter || (f.label + " " + f.module).toLowerCase().includes(tfilter))
+    .sort((a, b) => { const x = a[sortCol], y = b[sortCol]; return (typeof x === "string" ? x.localeCompare(y) : x - y) * sortDir; });
+  $("table").innerHTML = `<thead><tr>${COLS.map(([c, n]) => `<th data-c="${c}" class="${c === sortCol ? "sorted" : ""}">${n}${c === sortCol ? (sortDir < 0 ? " ↓" : " ↑") : ""}</th>`).join("")}</tr></thead><tbody>${rows.map((f) => `<tr data-k="${esc(f.key)}"><td><i style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${colorOf(f.key)};margin-right:7px"></i>${esc(f.label)}</td><td class="mono" style="color:var(--muted)">${esc(f.module || "(script)")}</td><td>${fmtN(f.calls)}</td><td>${fmtNs(f.total_ns)}</td><td>${fmtNs(f.self_ns)}</td><td>${fmtNs(f.mean_ns)}</td><td>${fmtNs(f.median_ns)}</td><td>${fmtNs(f.p95_ns)}</td><td>${fmtNs(f.max_ns)}</td></tr>`).join("")}</tbody>`;
+  $("tablehint").textContent = `${rows.length} of ${fs.length} functions`;
+  $("table").querySelectorAll("th").forEach((th) => (th.onclick = () => { const c = th.dataset.c; if (c === sortCol) sortDir *= -1; else { sortCol = c; sortDir = c === "label" || c === "module" ? 1 : -1; } renderTable(); }));
+  $("table").querySelectorAll("tbody tr").forEach((tr) => (tr.onclick = () => focusFn(tr.dataset.k)));
+}
+$("tsearch").addEventListener("input", (ev) => { tfilter = ev.target.value.trim().toLowerCase(); renderTable(); });
+
+// ---------- boot ----------
+renderSide(); renderBars(); renderPaths(); renderTable(); renderFlame();
+requestAnimationFrame(fit);
+let rz; addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() => { renderFlame(); }, 150); });
+if (mostCalled) { selected = mostCalled.key; renderSide(); selected = null; }
+})();
+</script>
+</body>
+</html>

@@ -18,3 +18,9 @@ class TraceEvent:
     event_type: EventType
     identity: FunctionIdentity
     caller: FunctionIdentity | None = None
+    timestamp_ns: int = 0
+    thread_id: int = 0
+    # CALL: a generator/coroutine resuming rather than a fresh call.
+    resumed: bool = False
+    # RETURN: the frame exited by raising an exception.
+    raised: bool = False
