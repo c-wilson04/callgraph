@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="380" viewBox="0 0 1280 380" role="img" aria-label="callgraph: see what your Python code actually does at runtime">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0d1117"/>
+      <stop offset="1" stop-color="#151b23"/>
+    </linearGradient>
+    <linearGradient id="heat" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#3fb950"/>
+      <stop offset="0.33" stop-color="#d29922"/>
+      <stop offset="0.66" stop-color="#f0883e"/>
+      <stop offset="1" stop-color="#f85149"/>
+    </linearGradient>
+    <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse">
+      <circle cx="1" cy="1" r="1" fill="#222b36"/>
+    </pattern>
+    <style>
+      .t { font-family: "Segoe UI", -apple-system, Helvetica, Arial, sans-serif; }
+      .m { font-family: "Cascadia Code", "SF Mono", Menlo, Consolas, monospace; }
+      .edge { fill: none; stroke: #5d6b7c; stroke-width: 2; }
+      .flow { fill: none; stroke: #f0b45a; stroke-width: 3; stroke-dasharray: 10 260; stroke-linecap: round; animation: flow 2.6s linear infinite; }
+      @keyframes flow { from { stroke-dashoffset: 270; } to { stroke-dashoffset: 0; } }
+      @media (prefers-reduced-motion: reduce) { .flow { animation: none; opacity: 0; } }
+    </style>
+  </defs>
+  <rect width="1280" height="380" rx="24" fill="url(#bg)"/>
+  <rect x="640" y="0" width="640" height="380" fill="url(#dots)" opacity=".9"/>
+
+  <!-- logo + wordmark -->
+  <g transform="translate(64,72)">
+    <rect width="72" height="72" rx="18" fill="#6cb6ff" opacity=".16"/>
+    <circle cx="22" cy="36" r="8" fill="#6cb6ff"/>
+    <circle cx="52" cy="18" r="8" fill="#f0b45a"/>
+    <circle cx="52" cy="54" r="8" fill="#f85149"/>
+    <path d="M30 33 L44 22 M30 39 L44 50" stroke="#e6edf3" stroke-width="3" stroke-linecap="round"/>
+  </g>
+  <text x="156" y="128" class="t" font-size="64" font-weight="700" fill="#e6edf3" letter-spacing="-1.5">callgraph</text>
+  <text x="64" y="206" class="t" font-size="30" font-weight="600" fill="#e6edf3">See what your Python code <tspan fill="#6cb6ff">actually</tspan> does.</text>
+  <text x="64" y="248" class="t" font-size="21" fill="#8b98a8">Every function that ran · in order · how often · how long</text>
+  <g transform="translate(64,284)">
+    <rect width="520" height="48" rx="12" fill="#0b0f14" stroke="#2a3441" stroke-width="1.5"/>
+    <text x="20" y="31" class="m" font-size="18" fill="#6cb6ff">$</text>
+    <text x="40" y="31" class="m" font-size="18" fill="#e6edf3">callgraph run app.py --format html --open</text>
+  </g>
+
+  <!-- mini call graph -->
+  <g class="t">
+    <path class="edge" d="M960 92 C960 112 860 112 860 134"/>
+    <path class="edge" d="M960 92 C960 112 1090 112 1090 134"/>
+    <path class="edge" d="M860 178 C860 198 760 198 760 222"/>
+    <path class="edge" d="M860 178 C860 198 930 198 930 222"/>
+    <path class="edge" d="M1090 178 L1090 222"/>
+    <path class="edge" d="M930 266 C930 286 1000 286 1000 306" stroke-width="5"/>
+    <path class="flow" d="M960 92 C960 112 860 112 860 134 L860 178 C860 198 930 198 930 222 L930 266 C930 286 1000 286 1000 306"/>
+
+    <g transform="translate(890,48)">
+      <rect width="140" height="44" rx="10" fill="#151b23" stroke="#3fb950" stroke-width="2"/><rect width="140" height="44" rx="10" fill="#3fb950" opacity=".14"/>
+      <text x="12" y="18" font-size="12" font-weight="600" fill="#e6edf3">main</text>
+      <text x="12" y="36" font-size="15" font-weight="700" fill="#e6edf3">1 <tspan font-size="10" fill="#8b98a8" font-weight="500">call</tspan></text>
+    </g>
+    <g transform="translate(790,134)">
+      <rect width="140" height="44" rx="10" fill="#151b23" stroke="#d29922" stroke-width="2"/><rect width="140" height="44" rx="10" fill="#d29922" opacity=".14"/>
+      <text x="12" y="18" font-size="12" font-weight="600" fill="#e6edf3">dispatch</text>
+      <text x="12" y="36" font-size="15" font-weight="700" fill="#e6edf3">400 <tspan font-size="10" fill="#8b98a8" font-weight="500">calls</tspan></text>
+    </g>
+    <g transform="translate(1020,134)">
+      <rect width="140" height="44" rx="10" fill="#151b23" stroke="#3fb950" stroke-width="2"/><rect width="140" height="44" rx="10" fill="#3fb950" opacity=".14"/>
+      <text x="12" y="18" font-size="12" font-weight="600" fill="#e6edf3">create_app</text>
+      <text x="12" y="36" font-size="15" font-weight="700" fill="#e6edf3">1 <tspan font-size="10" fill="#8b98a8" font-weight="500">call</tspan></text>
+    </g>
+    <g transform="translate(690,222)">
+      <rect width="140" height="44" rx="10" fill="#151b23" stroke="#d29922" stroke-width="2"/><rect width="140" height="44" rx="10" fill="#d29922" opacity=".14"/>
+      <text x="12" y="18" font-size="12" font-weight="600" fill="#e6edf3">get_book</text>
+      <text x="12" y="36" font-size="15" font-weight="700" fill="#e6edf3">1,039 <tspan font-size="10" fill="#8b98a8" font-weight="500">calls</tspan></text>
+    </g>
+    <g transform="translate(860,222)">
+      <rect width="140" height="44" rx="10" fill="#151b23" stroke="#f0883e" stroke-width="2"/><rect width="140" height="44" rx="10" fill="#f0883e" opacity=".14"/>
+      <text x="12" y="18" font-size="12" font-weight="600" fill="#e6edf3">tokenize</text>
+      <text x="12" y="36" font-size="15" font-weight="700" fill="#e6edf3">15,050 <tspan font-size="10" fill="#8b98a8" font-weight="500">calls</tspan></text>
+    </g>
+    <g transform="translate(1020,222)">
+      <rect width="140" height="44" rx="10" fill="#151b23" stroke="#3fb950" stroke-width="2"/><rect width="140" height="44" rx="10" fill="#3fb950" opacity=".14"/>
+      <text x="12" y="18" font-size="12" font-weight="600" fill="#e6edf3">Database</text>
+      <text x="12" y="36" font-size="15" font-weight="700" fill="#e6edf3">1 <tspan font-size="10" fill="#8b98a8" font-weight="500">call</tspan></text>
+    </g>
+    <g transform="translate(920,306)">
+      <rect width="160" height="48" rx="10" fill="#151b23" stroke="#f85149" stroke-width="2.5"/><rect width="160" height="48" rx="10" fill="#f85149" opacity=".2"/>
+      <text x="12" y="19" font-size="12" font-weight="600" fill="#e6edf3">normalize 🔥</text>
+      <text x="12" y="39" font-size="17" font-weight="700" fill="#e6edf3">652,402 <tspan font-size="10" fill="#8b98a8" font-weight="500">calls</tspan></text>
+    </g>
+
+    <!-- heat key -->
+    <text x="1214" y="58" font-size="12" fill="#8b98a8" text-anchor="middle">calls</text>
+    <rect x="1206" y="66" width="16" height="230" rx="8" fill="url(#heat)" transform="rotate(180 1214 181)"/>
+    <text x="1230" y="76" font-size="12" fill="#f85149">many</text>
+    <text x="1230" y="296" font-size="12" fill="#3fb950">few</text>
+  </g>
+</svg>

@@ -2,7 +2,7 @@
 
 ## Cursor Cloud specific instructions
 
-`callgraph` is a dependency-free, terminal-only Python package (a dynamic runtime call graph tracer). There is no GUI, server, or database — verify changes with `pytest` and by running the CLI. The only dev dependency is `pytest`.
+`callgraph` is a dependency-free Python package (a dynamic runtime call graph tracer and profiler) with a CLI and a self-contained HTML dashboard. There is no server or database — verify changes with `pytest` and by running the CLI. The only dev dependency is `pytest`.
 
 ### Environment
 
@@ -14,9 +14,12 @@
 - Tests: `pytest` (config in `pyproject.toml`, tests in `tests/`).
 - Run the app: `callgraph run examples/abc_demo.py` or `python -m callgraph run examples/abc_demo.py`. See `README.md` for output formats and filtering flags.
 
-### Non-obvious gotcha
+### Non-obvious gotchas
 
-- The `run` subcommand defines `script_args` with `argparse.REMAINDER`, so any flag placed **after** the script path (e.g. `... abc_demo.py --format json`) is captured as an argument forwarded to the traced script and silently ignored by the CLI (you get default `ascii` output). Put CLI flags **before** the script path: `callgraph run --format json examples/abc_demo.py`.
+- CLI flags may go before or after the script path; unknown tokens after the script are forwarded to it, and everything after `--` is forwarded verbatim (`cli._split_argv`).
+- `stats` / `html` / `ascii` / `metrics-json` use the low-overhead `AggregateRecorder`; only `json` / `mermaid` / `events` build the full per-call tree.
+- The `sys.monitoring` hot path (`instrumentation.MonitoringTracer._make_aggregate_callbacks`) is deliberately inlined and keyed by `id(code)`; benchmark with `callgraph bench examples/bookstore/app.py --no-latency` before and after touching it.
+- The dashboard is a single template (`src/callgraph/render/dashboard.html`) with data injected at `/*__CALLGRAPH_DATA__*/null`; it must stay dependency-free (no CDN) so reports work offline.
 
 ### Lint
 
